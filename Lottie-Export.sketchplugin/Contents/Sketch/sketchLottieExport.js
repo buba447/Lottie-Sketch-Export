@@ -81,7 +81,7 @@ function compObjectFromArtboard(artboard) {
     var width = artboard.frame().width()
     var height = artboard.frame().height()
 
-    var layers = artboard.layers().reverse()
+    var layers = artboard.layers()
     
     var lotLayers = []
     var index = 0
@@ -90,6 +90,7 @@ function compObjectFromArtboard(artboard) {
         lotLayers.push(lotLayer)
         index = index + 1
     })
+    lotLayers.reverse()
     
     return {
         assets: [],
@@ -143,13 +144,13 @@ function groupObjectFromLayerGroup(layerGroup) {
     var name = layerGroup.name()
     var items = []
 
-    var children = layerGroup.layers().reverse()
-        
+    var children = layerGroup.layers()
+    
     children.forEach(function(child) {
         var childItems = groupObjectFromGenericLayer(child)
         items.push(childItems)
     })
-
+    items.reverse()
     // The layers transform node.
     var style = layerGroup.style()
     var aX = layerGroup.frame().width() * 0.5
@@ -228,10 +229,24 @@ function groupObjectFromShapeGroup(shapeGroup) {
         }
     })
 
-    // Then finally a transform node
-    
+    // Now wrap everything in a group to transpose center coordinate
+    var aX = shapeGroup.frame().width() * 0.5
+    var aY = shapeGroup.frame().height() * 0.5
+
+    var nestedTransform = {
+        ty: "tr",
+        nm: "Transform",
+        p: animatableObject([-aX, -aY, 0]),
+        a: animatableObject([0, 0, 0]),
+        s: animatableObject([100,100,100]),
+        r: animatableObject(0),
+        o: animatableObject(100)
+    }
+    it.push(nestedTransform)
+
+    // The Top Level transform node
     var position = animatableObject([shapeGroup.center().x, shapeGroup.center().y, 0])
-    var origin =  animatableObject(0,0,0])
+    var origin =  animatableObject(0, 0, 0])
     var rotation = animatableObject(-shapeGroup.rotation())
     var scale = animatableObject([100,100,100])
     var opacity = animatableObject((style.contextSettings().opacity()* 100))
@@ -244,11 +259,18 @@ function groupObjectFromShapeGroup(shapeGroup) {
         r: rotation,
         o: opacity
     }
-    it.push(transform)
+
+    // Now wrap everything in a group to transpose coordinate system.
+    var items = [{
+        ty: "gr",
+        nm: "Contents",
+        it: it
+    }, transform]
+
     return {
         ty: "gr",
         nm: name,
-        it: it
+        it: items
     }
 }
 
@@ -268,7 +290,7 @@ function ellipseObjectFromOvalLayer(ovalLayer) {
     var width = ovalLayer.frame().width()
     var height = ovalLayer.frame().height()
     var name = ovalLayer.name()
-    var p = animatableObject([0, 0])
+    var p = animatableObject([ovalLayer.frame().x(), ovalLayer.frame().y()])
     var size = animatableObject([width, height])
     return {
         ind: 0,
@@ -282,9 +304,8 @@ function ellipseObjectFromOvalLayer(ovalLayer) {
 function pathObjectFromPathLayer(pathLayer) {
     var width = pathLayer.frame().width()
     var height = pathLayer.frame().height()
-    var xOffset = width * 0.5
-    var yOffset = height * 0.5
-
+    var xO = pathLayer.frame().x()
+    var yO = pathLayer.frame().y()
     var name = pathLayer.name()
     var path = pathLayer.path()
     var isClosed = path.isClosed()
@@ -293,19 +314,19 @@ function pathObjectFromPathLayer(pathLayer) {
     var o = []
     var v = []
     points.forEach(function(pointWrapper) {
-        var x = (pointWrapper.point().x * width) - xOffset
-        var y = (pointWrapper.point().y * height) - yOffset
+        var x = ((pointWrapper.point().x * width) + xO)
+        var y = ((pointWrapper.point().y * height) + yO)
         v.push([x, y])
         if (pointWrapper.hasCurveTo()) {
-            var iX = (pointWrapper.curveTo().x * width) - xOffset
-            var iY = (pointWrapper.curveTo().y * height) - yOffset
+            var iX = ((pointWrapper.curveTo().x * width) + xO)
+            var iY = ((pointWrapper.curveTo().y * height) + yO)
             i.push([iX - x, iY - y])
         } else {
             i.push([0,0])
         }
         if (pointWrapper.hasCurveFrom()) {
-            var oX = (pointWrapper.curveFrom().x * width) - xOffset
-            var oY = (pointWrapper.curveFrom().y * height) - yOffset
+            var oX = ((pointWrapper.curveFrom().x * width) + xO)
+            var oY = ((pointWrapper.curveFrom().y * height) + yO)
             o.push([oX - x, oY - y])
         } else {
             o.push([0,0])

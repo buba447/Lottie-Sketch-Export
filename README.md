@@ -1,6 +1,6 @@
 # Lottie-Sketch-Export
 Native Sketch plugin for exporting Artboards and Symbols into Lottie JSON
-**This plugin is in alpha and currently in development. If you find any errors, please file an issue***
+**This plugin is in alpha and currently in development. If you find any errors, please file an issue**
 
 ## To Install
 Clone or download and double-click on `Lottie-Export.sketchplugin` to automatically install into sketch.

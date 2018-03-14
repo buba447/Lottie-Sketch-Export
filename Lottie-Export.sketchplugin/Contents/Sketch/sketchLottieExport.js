@@ -275,7 +275,8 @@ function groupObjectFromShapeGroup(shapeGroup) {
 }
 
 function shapeObjectFromShapeLayer(shape) {
-    if (shape.isMemberOfClass(MSShapePathLayer)) {
+    if (shape.isMemberOfClass(MSShapePathLayer) ||
+        shape.isMemberOfClass(MSRectangleShape)) {
         return pathObjectFromPathLayer(shape)
     }
     if (shape.isMemberOfClass(MSOvalShape)) {

@@ -14,6 +14,7 @@ function onSetUp(context) {
   scriptPath = context.scriptPath
   scriptFolder = scriptPath.stringByDeletingLastPathComponent()
   app = NSApplication.sharedApplication()
+  iconImage = NSImage.alloc().initByReferencingFile(context.plugin.urlForResourceNamed("icon.png").path())
 }
 
 
@@ -34,6 +35,7 @@ function exportSelection(context) {
       exportArtboards(artboards)
     } else {
       alertNoArtboards(noArtboardsAlertMessage())
+      log("No Artboards")
     }
 }
 

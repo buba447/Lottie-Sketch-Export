@@ -290,7 +290,7 @@ function ellipseObjectFromOvalLayer(ovalLayer) {
     var width = ovalLayer.frame().width()
     var height = ovalLayer.frame().height()
     var name = ovalLayer.name()
-    var p = animatableObject([ovalLayer.frame().x(), ovalLayer.frame().y()])
+    var p = animatableObject([(width * 0.5), (height * 0.5)])
     var size = animatableObject([width, height])
     return {
         ind: 0,

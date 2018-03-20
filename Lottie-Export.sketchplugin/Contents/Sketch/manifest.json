@@ -6,7 +6,7 @@
   "version": "0.1",
   "identifier": "com.withrow.sketch.lottie-export",
   "appcast": "TODO",
-  "compatibleVersion": "39",
+  "compatibleVersion": "49",
   "bundleVersion": "1.0",
   "commands": [
     {

@@ -308,9 +308,8 @@ function pathObjectFromPathLayer(pathLayer) {
     var xO = pathLayer.frame().x()
     var yO = pathLayer.frame().y()
     var name = pathLayer.name()
-    var path = pathLayer.path()
-    var isClosed = path.isClosed()
-    var points = path.points()
+    var isClosed = pathLayer.isClosed()
+    var points = pathLayer.points()
     var i = []
     var o = []
     var v = []

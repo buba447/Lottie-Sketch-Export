@@ -129,18 +129,23 @@ function layerObjectFromLayerGroup(layer, index) {
 }
 
 function groupObjectFromGenericLayer(layer) {
-    if (layer.isMemberOfClass(MSShapeGroup) &&
-        layer.isVisible()) {
-        return groupObjectFromShapeGroup(layer)
-    }
+    log("Retrieving layer shapes")
+    /// This func only returns Contents of a lottie layer.
     if (layer.isMemberOfClass(MSLayerGroup) &&
         layer.isVisible()) {
+        log("Unwrapping Layer Group")
+        /// Layer is a group, wrap and extract its sublayers
         return groupObjectFromLayerGroup(layer)
+    } else if (layer.isVisible()) {
+        log("Unwrapping Shape Layer")
+        /// A regular child layer, get its contents
+        return groupObjectFromShapeLayer(layer)
     }
     return {}
 }
 
 function groupObjectFromLayerGroup(layerGroup) {
+    // Only returns contents for a lot layer wrapped in a group object
     var name = layerGroup.name()
     var items = []
 
@@ -196,17 +201,14 @@ function groupObjectFromLayerGroup(layerGroup) {
     }
 }
 
-function groupObjectFromShapeGroup(shapeGroup) {
+function groupObjectFromShapeLayer(shapeGroup) {
     // Converts a shape groupd into a lottie shape group. 
     // Contains shapes, fills and strokes for the layer, with a final transform node.
     var name = shapeGroup.name()
     var it = []
-    // First add shape data
-    var shapeLayers = shapeGroup.layers()
-    shapeLayers.forEach(function(shapeLayer) {
-        var shapeObject = shapeObjectFromShapeLayer(shapeLayer)
-        it.push(shapeObject)
-    })
+    // First add shape point data
+    var pointData = pathObjectFromPathLayer(shapeGroup)
+    it.push(pointData)
 
     var style = shapeGroup.style()
     // then stroke data

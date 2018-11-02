@@ -131,16 +131,23 @@ function layerObjectFromLayerGroup(layer, index) {
 function groupObjectFromGenericLayer(layer) {
     log("Retrieving layer shapes")
     /// This func only returns Contents of a lottie layer.
-    if (layer.isMemberOfClass(MSLayerGroup) &&
+    if ((layer.isMemberOfClass(MSLayerGroup)) &&
         layer.isVisible()) {
         log("Unwrapping Layer Group")
         /// Layer is a group, wrap and extract its sublayers
         return groupObjectFromLayerGroup(layer)
+    } else if ((layer.isMemberOfClass(MSShapeGroup)) &&
+        layer.isVisible()) {
+        log("Unwrapping Shape Group")
+        /// Layer is a group, wrap and extract its sublayers
+        return groupObjectFromShapeGroup(layer)
     } else if (layer.isVisible()) {
         log("Unwrapping Shape Layer")
         /// A regular child layer, get its contents
         return groupObjectFromShapeLayer(layer)
     }
+
+    
     return {}
 }
 
@@ -201,13 +208,91 @@ function groupObjectFromLayerGroup(layerGroup) {
     }
 }
 
+function groupObjectFromShapeGroup(shapeGroup) {
+    // Converts a shape groupd into a lottie shape group. 
+    // Contains shapes, fills and strokes for the layer, with a final transform node.
+    var name = shapeGroup.name()
+    var it = []
+    // First add shape point data
+    var children = shapeGroup.layers()
+    children.forEach(function(child) {
+        var pointData = pathObjectFromPathLayer(child, true)
+        it.push(pointData)
+    })
+
+    var style = shapeGroup.style()
+    // then stroke data
+    var borders = style.borders()
+    var borderOptions = style.borderOptions()
+
+    borders.forEach(function(border) {
+        if (border.isEnabled()) {
+            var strokeObject = strokeObjectFromBorder(border, borderOptions)
+            it.push(strokeObject)
+        }
+    })
+
+    // Now fill data
+    var fills = style.fills()
+    fills.forEach(function(fill) {
+        if (fill.isEnabled()) {
+            var fillObject = fillObjectFromFill(fill)
+            it.push(fillObject)
+        }
+    })
+
+    // Now wrap everything in a group to transpose center coordinate
+    var aX = shapeGroup.frame().width() * 0.5
+    var aY = shapeGroup.frame().height() * 0.5
+
+    var nestedTransform = {
+        ty: "tr",
+        nm: "Transform",
+        p: animatableObject([-aX, -aY, 0]),
+        a: animatableObject([0, 0, 0]),
+        s: animatableObject([100,100,100]),
+        r: animatableObject(0),
+        o: animatableObject(100)
+    }
+    it.push(nestedTransform)
+
+    // The Top Level transform node
+    var position = animatableObject([shapeGroup.center().x, shapeGroup.center().y, 0])
+    var origin =  animatableObject(0, 0, 0])
+    var rotation = animatableObject(-shapeGroup.rotation())
+    var scale = animatableObject([100,100,100])
+    var opacity = animatableObject((style.contextSettings().opacity()* 100))
+    var transform = {
+        ty: "tr",
+        nm: "Transform",
+        p: position,
+        a: origin,
+        s: scale,
+        r: rotation,
+        o: opacity
+    }
+
+    // Now wrap everything in a group to transpose coordinate system.
+    var items = [{
+        ty: "gr",
+        nm: "Contents",
+        it: it
+    }, transform]
+
+    return {
+        ty: "gr",
+        nm: name,
+        it: items
+    }
+}
+
 function groupObjectFromShapeLayer(shapeGroup) {
     // Converts a shape groupd into a lottie shape group. 
     // Contains shapes, fills and strokes for the layer, with a final transform node.
     var name = shapeGroup.name()
     var it = []
     // First add shape point data
-    var pointData = pathObjectFromPathLayer(shapeGroup)
+    var pointData = pathObjectFromPathLayer(shapeGroup, false)
     it.push(pointData)
 
     var style = shapeGroup.style()
@@ -304,11 +389,15 @@ function ellipseObjectFromOvalLayer(ovalLayer) {
     }
 }
 
-function pathObjectFromPathLayer(pathLayer) {
+function pathObjectFromPathLayer(pathLayer, transposePoints) {
     var width = pathLayer.frame().width()
     var height = pathLayer.frame().height()
-    var xO = pathLayer.frame().x()
-    var yO = pathLayer.frame().y()
+    var xO = 0
+    var yO = 0
+    if (transposePoints == true) {
+        xO = pathLayer.frame().x()
+        yO = pathLayer.frame().y()
+    }
     var name = pathLayer.name()
     var isClosed = pathLayer.isClosed()
     var points = pathLayer.points()
@@ -316,19 +405,19 @@ function pathObjectFromPathLayer(pathLayer) {
     var o = []
     var v = []
     points.forEach(function(pointWrapper) {
-        var x = ((pointWrapper.point().x * width))
-        var y = ((pointWrapper.point().y * height))
+        var x = ((pointWrapper.point().x * width) + xO)
+        var y = ((pointWrapper.point().y * height) + yO)
         v.push([x, y])
         if (pointWrapper.hasCurveTo()) {
-            var iX = ((pointWrapper.curveTo().x * width))
-            var iY = ((pointWrapper.curveTo().y * height))
+            var iX = ((pointWrapper.curveTo().x * width) + xO)
+            var iY = ((pointWrapper.curveTo().y * height) + yO)
             i.push([iX - x, iY - y])
         } else {
             i.push([0,0])
         }
         if (pointWrapper.hasCurveFrom()) {
-            var oX = ((pointWrapper.curveFrom().x * width))
-            var oY = ((pointWrapper.curveFrom().y * height))
+            var oX = ((pointWrapper.curveFrom().x * width) + xO)
+            var oY = ((pointWrapper.curveFrom().y * height) + yO)
             o.push([oX - x, oY - y])
         } else {
             o.push([0,0])

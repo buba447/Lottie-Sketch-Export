@@ -3,7 +3,7 @@
   "description": "Export artboards to Lottie — from the current page, all pages or current selection",
   "author": "Brandon Withrow",
   "homepage": "https://github.com/buba447/Lottie-Sketch-Export",
-  "version": "0.2",
+  "version": "0.3",
   "identifier": "com.withrow.sketch.lottie-export",
   "appcast": "TODO",
   "compatibleVersion": "52",

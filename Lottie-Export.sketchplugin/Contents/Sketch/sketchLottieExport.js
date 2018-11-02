@@ -316,19 +316,19 @@ function pathObjectFromPathLayer(pathLayer) {
     var o = []
     var v = []
     points.forEach(function(pointWrapper) {
-        var x = ((pointWrapper.point().x * width) + xO)
-        var y = ((pointWrapper.point().y * height) + yO)
+        var x = ((pointWrapper.point().x * width))
+        var y = ((pointWrapper.point().y * height))
         v.push([x, y])
         if (pointWrapper.hasCurveTo()) {
-            var iX = ((pointWrapper.curveTo().x * width) + xO)
-            var iY = ((pointWrapper.curveTo().y * height) + yO)
+            var iX = ((pointWrapper.curveTo().x * width))
+            var iY = ((pointWrapper.curveTo().y * height))
             i.push([iX - x, iY - y])
         } else {
             i.push([0,0])
         }
         if (pointWrapper.hasCurveFrom()) {
-            var oX = ((pointWrapper.curveFrom().x * width) + xO)
-            var oY = ((pointWrapper.curveFrom().y * height) + yO)
+            var oX = ((pointWrapper.curveFrom().x * width))
+            var oY = ((pointWrapper.curveFrom().y * height))
             o.push([oX - x, oY - y])
         } else {
             o.push([0,0])

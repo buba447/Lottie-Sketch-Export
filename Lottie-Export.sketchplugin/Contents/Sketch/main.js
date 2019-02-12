@@ -23,7 +23,6 @@ function onSetUp(context) {
 // ****************************
 
 function exportSelection(context) {
-  
     var selection = context.selection;
     var artboards = []
     selection.forEach(function(selectedArtboard) {

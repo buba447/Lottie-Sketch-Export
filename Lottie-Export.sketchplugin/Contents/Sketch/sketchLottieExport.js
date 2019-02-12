@@ -1,4 +1,6 @@
 // file handling
+var currentDocument = require('sketch/dom').getSelectedDocument()
+
 var writeTextToFile = function(text, filePath) {
     var t = [NSString stringWithFormat:@"%@", text],
     f = [NSString stringWithFormat:@"%@", filePath];
@@ -57,6 +59,7 @@ function exportArtboards(artboards) {
     artboards.forEach(function(selectedArtboard) {
         var name = selectedArtboard.name()
         var comp = compObjectFromArtboard(selectedArtboard)
+        log(comp)
         var saveLocation = promptSaveLocation(name)
         saveJsonToFile(comp, saveLocation)
     })
@@ -84,14 +87,15 @@ function compObjectFromArtboard(artboard) {
     var layers = artboard.layers()
     
     var lotLayers = []
+    var preComps = []
     var index = 0
     layers.forEach(function(layer) {
-        var lotLayer = layerObjectFromLayerGroup(layer, index)
+        var lotLayer = layerObjectFromLayer(layer, index, preComps)
         lotLayers.push(lotLayer)
         index = index + 1
+
     })
     lotLayers.reverse()
-    
     return {
         assets: [],
         ddd: 0,
@@ -102,11 +106,62 @@ function compObjectFromArtboard(artboard) {
         op: 120,
         v: "4.12.0",
         w: width,
-        layers: lotLayers
-      };
+        layers: lotLayers,
+        assets: preComps
+      }
 }
 
-function layerObjectFromLayerGroup(layer, index) {
+function layerObjectFromLayer(layer, index, preComps) {
+    if (layer.isMemberOfClass(MSSymbolInstance)) {
+        log("Unwrapping Symbol")
+        return precompLayerFromSymbolInstance(layer, index, preComps)
+    } else {
+        return shapeLayerObjectFromLayerGroup(layer, index)
+    }
+}
+
+function precompLayerFromSymbolInstance(layer, index, preComps) {
+    var symbolMaster = layer.symbolMaster()
+    var referenceID = layer.symbolID()
+    var compObject = compObjectFromArtboard(symbolMaster)
+    log("Precomp Comp")
+    log(compObject)
+    var layers = compObject.layers
+    var width = compObject.w
+    var height = compObject.h
+    var compAsset = {
+        "id" : referenceID,
+        "layers" : layers
+    }
+
+    preComps.push(compAsset)
+
+    var ty = 0
+    var name = layer.name()
+    var opacity = layer.style().contextSettings().opacity() * 100
+    var pX = layer.frame().x()
+    var pY = layer.frame().y()
+    var scaleX =  (layer.frame().width() / width) * 100
+    var scaleY =  (layer.frame().height() / height) * 100
+    var rotation = layer.rotation()
+    var xform = transformObject(opacity, rotation, [pX, pY, 0], [0, 0, 0], [scaleX,scaleY,100])
+
+    return {
+        ddd: 0,
+        ind: index,
+        ty: ty,
+        nm: name,
+        ks: xform,
+        refId: referenceID,
+        w: width,
+        h: height,
+        ip: 0,
+        op: 120,
+        st: 0
+    }
+}
+
+function shapeLayerObjectFromLayerGroup(layer, index) {
     // Converts a layer group into a lot layer dictionary
     var ty = 4 
     var name = layer.name()
